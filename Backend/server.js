@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
-
+const productRoutes = require('./routes/productRoutes');
 const app = express();
 
 // Connect to database first
@@ -22,6 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/users', userRoutes);
+app.use('/api/products',productRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

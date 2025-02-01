@@ -15,6 +15,11 @@ const protect = async (req, res, next) => {
             // Get user from token
             req.user = await User.findById(decoded.id).select('-password');
 
+            // Check if user is admin
+            if (req.user.role !== 'admin') {
+                return res.status(403).json({ message: 'Not authorized as an admin' });
+            }
+
             console.log(req.user); // Log the user object to see its properties
 
             next();

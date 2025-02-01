@@ -82,9 +82,19 @@ const getAllUsers = async (req, res) => {
     }
 };
 
+// Middleware to check if a user has admin privileges
+const isAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next(); // User is admin, proceed to the next middleware
+    } else {
+        res.status(403).json({ message: 'Access denied. Admins only.' });
+    }
+};
+
 // Export the functions for use in other parts of the application
 module.exports = {
     registerUser,
     loginUser,
     getAllUsers,
+    isAdmin,
 }; 
