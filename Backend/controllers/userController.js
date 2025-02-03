@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 
 // Function to generate a JWT token
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id, role) => {
+    return jwt.sign({ id, role }, process.env.JWT_SECRET, {
         expiresIn: '30d', // Token expires in 30 days
     });
 };
@@ -32,8 +32,9 @@ const registerUser = async (req, res) => {
                     _id: user._id,
                     name: user.name,
                     email: user.email,
+                    role: user.role, // Include role in response
                 },
-                token: generateToken(user._id), // Include token in response
+                token: generateToken(user._id, user.role), // Include role in token
             });
         }
     } catch (error) {
@@ -59,8 +60,9 @@ const loginUser = async (req, res) => {
                     _id: user._id,
                     name: user.name,
                     email: user.email,
+                    role: user.role, // Include role in response
                 },
-                token: generateToken(user._id), // Include token in response
+                token: generateToken(user._id, user.role), // Include role in token
             });
         } else {
             res.status(401).json({ message: 'Invalid email or password' }); // Handle invalid credentials
