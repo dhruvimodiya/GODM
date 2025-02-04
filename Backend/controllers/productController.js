@@ -1,18 +1,11 @@
 const Product = require('../models/productModel');
-const jwt = require('jsonwebtoken');    
+const User = require('../models/userModel');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 // @desc    Get all products
 // @route   GET /api/products
 // @access  Public
-const generateToken = (id) => {
-    console.log("🚀 ~ generateToken ~ generateToken:", generateToken)
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '30d', // Token expires in 30 days
-    });
-};
-
-
-// add product
 const getProducts = async (req, res) => {
     try {
         const products = await Product.find();
@@ -76,6 +69,76 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-module.exports = { getProducts, addProduct, updateProduct, deleteProduct };
+const loginAdmin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        console.log('Login attempt for:', email); // Debug log
+        
+        // Validate if email and password are provided
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide both email and password"
+            });
+        }
+
+        // Find admin user by email
+        const admin = await User.findOne({ email });
+        console.log('Found user:', admin); // Debug log
+        
+        if (!admin) {
+            return res.status(401).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        if (admin.role !== 'admin') {
+            return res.status(401).json({
+                success: false,
+                message: "User is not an admin"
+            });
+        }
+
+        // Compare password
+        const isPasswordValid = await bcrypt.compare(password, admin.password);
+        console.log('Password valid:', isPasswordValid); // Debug log
+        
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid password"
+            });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { userId: admin._id, role: admin.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        res.status(200).json({
+            success: true,
+            token,
+            admin: {
+                id: admin._id,
+                email: admin.email,
+                role: admin.role
+            }
+        });
+
+    } catch (error) {
+        console.error('Login error details:', error); // Detailed error log
+        res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+};
+
+module.exports = { getProducts, addProduct, updateProduct, deleteProduct, loginAdmin };
 
 

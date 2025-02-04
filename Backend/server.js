@@ -22,20 +22,65 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/users', userRoutes);
-app.use('/api/products',productRoutes);
+app.use('/api/products', productRoutes);
+
+// Basic route
+app.get('/', (req, res) => {
+  res.send('API is running...');
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  res.status(500).json({ 
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
-app.get('/',function(req,res) {
-  res.send('working')
-})
+// Handle 404 routes
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
 
-const PORT = process.env.PORT || 5000;
+// Try different ports if default port is in use
+const startServer = async (retries = 3) => {
+  const BASE_PORT = parseInt(process.env.PORT) || 5001;
+  
+  for (let i = 0; i < retries; i++) {
+    try {
+      const port = BASE_PORT + i;
+      const server = await new Promise((resolve, reject) => {
+        const server = app.listen(port)
+          .once('listening', () => {
+            console.log(`Server running on port ${port}`);
+            resolve(server);
+          })
+          .once('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+              console.log(`Port ${port} is busy, trying next port...`);
+              server.close();
+              reject(err);
+            } else {
+              reject(err);
+            }
+          });
+      });
+      
+      // Handle unhandled promise rejections
+      process.on('unhandledRejection', (err) => {
+        console.log('Unhandled Rejection:', err);
+        server.close(() => process.exit(1));
+      });
+      
+      return server;
+    } catch (err) {
+      if (i === retries - 1) throw err;
+    }
+  }
+};
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+startServer().catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });
