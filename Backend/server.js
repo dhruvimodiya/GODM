@@ -5,6 +5,7 @@ require('dotenv').config();
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
+const cartRoutes = require('./routes/addtocartRoutes');
 const app = express();
 
 // Connect to database first
@@ -23,6 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
